@@ -1,3 +1,5 @@
+default rel
+
 ; ----------------------------------------------------------------------------------------
 global                  asm_func1 
 ;
@@ -48,6 +50,36 @@ _exit:
         mov             rax, 60         ; system call for exit
         xor             rdi, rdi        ; exit code 0
         syscall                         ; invoke operating system to exit
+;----------------------------------------------------------------------------------------
+global                  asm_func3
+;
+; Receives a string null terminated, converts lowercase chars to UPPERCASE and return new string
+;
+
+asm_func3:
+        push            rbp                     ; must be preserved
+        xor             rcx,rcx                 ; zero counter
+        mov             dl, byte [rdi+rcx]      ; copy one byte
+
+_toupper:
+        cmp             dl, byte 61h            ; is lowercase ascii?
+        jl              _toupper_next           ; no, go to next char
+
+        cmp             dl, byte 7Ah            ; is lowercase ascii?
+        jg              _toupper_next           ; no, go to next char
+        
+        sub             dl, 20h                 ; subtract 32 to convert lowercase to uppercase
+
+_toupper_next:   
+        mov             byte [rsi+rcx], dl      ; save byte on rsi
+        inc             rcx                     ; next char
+        mov             dl, byte [rdi+rcx]      ; copy one more byte
+        cmp             dl, 0h                  ; is end of string?
+        jne             _toupper                ; start again
+        mov             rax, rsi                ; copy rsi to rax to return
+        mov             rbx, 0h
+        pop             rbp                     ; restore rbp
+        ret
 
 ;----------------------------------------------------------------------------------------------------
 
