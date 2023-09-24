@@ -13,7 +13,7 @@ asm_func1:mov           rax, 1          ; system call for write
         mov             rdx, 21         ; number of bytes
         syscall                         ; invoke operating system to do the write
         ret
-
+;------------------------------------------------------------------------------------------------
         global          asm_func2
 
 asm_func2:
@@ -45,6 +45,8 @@ _strlen_null:
         mov             rax, 60         ; system call for exit
         xor             rdi, rdi        ; exit code 0
         syscall                         ; invoke operating system to exit
+
+;----------------------------------------------------------------------------------------------------
 
         section         .data
 msg1:   db              "Hello from asm_func1", 10    ; note the newline at the end
