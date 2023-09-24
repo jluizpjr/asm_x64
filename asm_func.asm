@@ -1,20 +1,27 @@
 ; ----------------------------------------------------------------------------------------
-        global          asm_func1 
+global                  asm_func1 
+;
+; Prints msg1 string
+;
 
-        section         .text 
+section                 .text 
+
 asm_func1:mov           rax, 1          ; system call for write
         mov             rdi, 1          ; file handle 1 is stdout
         lea             rsi, [rel msg1] ; address of string to output
-        mov             rdx, 21         ; number of bytes
+        mov             rdx, len         ; number of bytes
         syscall                         ; invoke operating system to do the write
         ret
 ;------------------------------------------------------------------------------------------------
-        global          asm_func2
+global                  asm_func2
+;
+; Receives a string null terminated, prints the string and returns the length of the string
+;
 
 asm_func2:
-        mov             rsi, rax        ; argument received
+        mov             rsi, rax        ; stores argument received 
         call            _strlen         ; get argument length
-        mov             rdx, rax        ; save in rdx for syscall 
+        mov             rdx, rax        ; saves in rdx for syscall 
         mov             rax, 1          ; system call for write
         mov             rdi, 1          ; file handle 1 is stdout
         syscall                         ; invoke operating system to do the write
@@ -22,7 +29,7 @@ asm_func2:
 
 _strlen:
         push            rcx             ; save and clear out counter
-        xor             rcx, rcx
+        xor             rcx, rcx        ; clear rcx
 
 _strlen_next:
         cmp             [rdi], byte 0   ; null byte yet?
@@ -44,5 +51,7 @@ _exit:
 
 ;----------------------------------------------------------------------------------------------------
 
-        section         .data
-msg1:   db              "Hello from asm_func1", 10    ; note the newline at the end
+section                 .data
+        msg1:           db "Hello from asm_func1", 10    ; note the newline at the end
+        len             equ $ - msg1    ; calculate length of msg1
+
