@@ -9,7 +9,7 @@
         section         .text 
 asm_func1:mov           rax, 1          ; system call for write
         mov             rdi, 1          ; file handle 1 is stdout
-        lea             rsi, [rel message1]            ; address of string to output
+        lea             rsi, [rel msg1] ; address of string to output
         mov             rdx, 21         ; number of bytes
         syscall                         ; invoke operating system to do the write
         ret
@@ -47,5 +47,4 @@ _strlen_null:
         syscall                         ; invoke operating system to exit
 
         section         .data
-message1: db        "Hello from asm_func1", 10      ; note the newline at the end
-message2: db        "Hello from asm_func2", 10      ; note the newline at the end
+msg1:   db              "Hello from asm_func1", 10      ; note the newline at the end
