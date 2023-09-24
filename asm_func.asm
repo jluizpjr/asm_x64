@@ -47,4 +47,4 @@ _strlen_null:
         syscall                         ; invoke operating system to exit
 
         section         .data
-msg1:   db              "Hello from asm_func1", 10      ; note the newline at the end
+msg1:   db              "Hello from asm_func1", 10    ; note the newline at the end
