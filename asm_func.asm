@@ -62,23 +62,24 @@ global                  asm_func3
 asm_func3:
         push            rbp                     ; must be preserved
         xor             rcx,rcx                 ; zero counter
-        mov             dl, byte [rdi+rcx]      ; copy one byte
 
 _toupper:
-        cmp             dl, byte 61h            ; is lowercase ascii?
+        mov             al, byte[rdi]
+        cmp             al, 0h                  ; is end of string?
+        je              _toupper_end                ; end
+        cmp             al,  61h            ; is lowercase ascii?
         jl              _toupper_next           ; no, go to next char
-
-        cmp             dl, byte 7Ah            ; is lowercase ascii?
-        jg              _toupper_next           ; no, go to next char
-        
-        sub             dl, 20h                 ; subtract 32 to convert lowercase to uppercase
+        cmp             al,  7Ah            ; is lowercase ascii?
+        jg              _toupper_next           ; no, go to next char        
+        sub             al, 20h                 ; subtract 32 to convert lowercase to uppercase
 
 _toupper_next:   
-        mov             byte [rsi+rcx], dl      ; save byte on rsi
+        mov             [rsi+rcx], byte al
+        inc             rdi
         inc             rcx                     ; next char
-        mov             dl, byte [rdi+rcx]      ; copy one more byte
-        cmp             dl, 0h                  ; is end of string?
-        jne             _toupper                ; start again
+        jmp             _toupper
+
+_toupper_end: 
         mov             rax, rsi                ; copy rsi to rax to return
         pop             rbp                     ; restore rbp
         ret
