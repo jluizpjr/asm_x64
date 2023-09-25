@@ -8,11 +8,14 @@ global                  asm_func1
 
 section                 .text 
 
-asm_func1:mov           rax, 1          ; system call for write
+asm_func1:
+        push            rbp
+        mov             rax, 1          ; system call for write
         mov             rdi, 1          ; file handle 1 is stdout
         lea             rsi, [rel msg1] ; address of string to output
         mov             rdx, len         ; number of bytes
         syscall                         ; invoke operating system to do the write
+        pop             rbp
         ret
 ;------------------------------------------------------------------------------------------------
 global                  asm_func2
@@ -21,16 +24,17 @@ global                  asm_func2
 ;
 
 asm_func2:
+        push            rbp             ; must be preserved
         mov             rsi, rax        ; stores argument received 
         call            _strlen         ; get argument length
         mov             rdx, rax        ; saves in rdx for syscall 
         mov             rax, 1          ; system call for write
         mov             rdi, 1          ; file handle 1 is stdout
         syscall                         ; invoke operating system to do the write
+        pop             rbp             ; restore rbp
         ret
 
 _strlen:
-        push            rcx             ; save and clear out counter
         xor             rcx, rcx        ; clear rcx
 
 _strlen_next:
@@ -43,7 +47,6 @@ _strlen_next:
 
 _strlen_null:
         mov             rax, rcx        ; rcx = the length (put in rax)
-        pop             rcx             ; restore rcx
         ret                             ; get out
 
 _exit:
@@ -77,7 +80,6 @@ _toupper_next:
         cmp             dl, 0h                  ; is end of string?
         jne             _toupper                ; start again
         mov             rax, rsi                ; copy rsi to rax to return
-        mov             rbx, 0h
         pop             rbp                     ; restore rbp
         ret
 
