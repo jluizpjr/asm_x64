@@ -29,12 +29,10 @@ asm_func1:
         mov rdi, 1                    ; file descriptor: 1 is stdout.
         
         ; Load the address of the msg1 string into rsi.
-        lea rsi, [rel msg1]           ; Use the LEA instruction with the 'rel' keyword 
-                                      ; to get the relative address of msg1.
+        lea rsi, [rel msg1]           ; Move relative address of msg1 to RSI 
 
         ; Specify the number of bytes to write.
         mov rdx, len                  ; The variable 'len' should contain the length of msg1.
-                                      ; It is assumed to be defined elsewhere in the program.
 
         ; Perform the system call to write to stdout.
         syscall                       
@@ -92,17 +90,18 @@ asm_func2:
 ;   rax: Length of the string
 
 _strlen:
+        mov rsi, rdi
         ; Clear RCX, which will store the length of the string
         xor rcx, rcx                
 
 _strlen_next:
         ; Check if we've hit the null byte terminator
-        cmp [rdi], byte 0            
+        cmp [rsi], byte 0            
         jz _strlen_null              
 
         ; If not, increment our counter and move to the next character
         inc rcx                      
-        inc rdi                      
+        inc rsi                      
         jmp _strlen_next            
 
 _strlen_null:
@@ -176,7 +175,30 @@ _toupper_end:
         pop   rbp                      
         ret                           
 
+;--------------------------------------------------------------------------------
+global asm_func4
 
+asm_func4:
+        push rbp                ; preserve rbp
+        call _strlen            ; get rdi strlen
+        mov rdx, rax            ; copy strlen to reverse counter minus 0h and \n
+        sub rdx, 2
+        xor rcx, rcx            ; clear counter        
+
+_reverse_str:
+        mov al, [rdi+rdx-1]       ; copy last char (removing 0h and ah) to al
+        mov byte [rsi+rcx], al  ; copy al to rsi+counter
+        inc rcx                 ; increment destination count
+        dec rdx                 ; decrement reverse counter
+        test rdx,rdx
+        jnz  _reverse_str       ; not zero? do it again
+
+_reverse_end:
+        mov byte [rsi+rcx], 0h
+        mov rax,rsi
+        pop rbp
+        ret
+;---------------------------------------------------------------------------------
 _exit:
         ; System call for exit
         mov rax, 60                 
