@@ -1,10 +1,5 @@
 default rel
 
-section .data
-        msg1:           db "Hello from asm_func1", 10    ; note the newline at the end
-        len             equ $ - msg1    ; calculate length of msg1
-
-
 ; Define the code section.
 section .text 
 
@@ -90,6 +85,7 @@ asm_func2:
 ;   rax: Length of the string
 
 _strlen:
+        push rsi
         mov rsi, rdi
         ; Clear RCX, which will store the length of the string
         xor rcx, rcx                
@@ -106,7 +102,8 @@ _strlen_next:
 
 _strlen_null:
         ; When the null byte is found, move the length from RCX to RAX
-        mov rax, rcx                
+        mov rax, rcx  
+        pop rsi              
         ret                          
 
 ; Function: _exit
@@ -176,27 +173,32 @@ _toupper_end:
         ret                           
 
 ;--------------------------------------------------------------------------------
+
+;----------------------------------------------------------------------------------------------------
 global asm_func4
 
 asm_func4:
         push rbp                ; preserve rbp
+        push rbx
         call _strlen            ; get rdi strlen
-        mov rdx, rax            ; copy strlen to reverse counter minus 0h and \n
-        sub rdx, 2
+        mov rdx, rax            ; copy strlen to reverse counter 
+        sub rdx, 2              ; we don't neet to move \n and 0h 
         xor rcx, rcx            ; clear counter        
 
 _reverse_str:
-        mov al, [rdi+rdx-1]       ; copy last char (removing 0h and ah) to al
-        mov byte [rsi+rcx], al  ; copy al to rsi+counter
-        inc rcx                 ; increment destination count
+        mov al, [rdi+rdx]       ; copy last char to al
+        mov bl, [rdi+rcx]       ; copy first char to bl
+        mov byte [rdi+rcx], al  ; swap
+        mov byte [rdi+rdx], bl  ; swap
+        inc rcx                 ; increment destination counter
         dec rdx                 ; decrement reverse counter
-        test rdx,rdx
-        jnz  _reverse_str       ; not zero? do it again
+        cmp rcx, rdx            ; compare counters
+        jle  _reverse_str       ; did we reach the middle?
 
 _reverse_end:
-        mov byte [rsi+rcx], 0h
-        mov rax,rsi
-        pop rbp
+        mov rax,rdi             ; return value
+        pop rbx                 ; housekeeping
+        pop rbp                 ; housekeeping
         ret
 ;---------------------------------------------------------------------------------
 _exit:
@@ -214,3 +216,11 @@ _exit:
 ;----------------------------------------------------------------------------------------------------
 
 
+
+
+
+;----------------------------------------------------------------------------------------------------
+
+section .data
+        msg1:           db "Hello from asm_func1", 10   ; note the newline at the end
+        len             equ $ - msg1                    ; calculate length of msg1
