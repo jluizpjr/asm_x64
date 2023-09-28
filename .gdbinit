@@ -6,7 +6,7 @@ display (char) $al
 display (char) $bl
 display (int) $rcx
 display (int) $rdx
-b _reverse_str 
+b asm_func99 
 run
 x/i $pc
 

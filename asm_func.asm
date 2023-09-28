@@ -5,10 +5,7 @@ section .text
 
 
 ; ----------------------------------------------------------------------------------------
-; Declare asm_func1 as a globally accessible function.
 global asm_func1
-
-
 ; Function: asm_func1
 ; Purpose: 
 ; - Uses the Linux system call convention to print msg1 string to standard output.
@@ -16,27 +13,15 @@ global asm_func1
 ; No parameters are expected. 
 ; No values are returned.
 asm_func1:
-        ; Preserve the base pointer.
-        push rbp                      
-
-        ; Prepare for the system call to write to stdout.
-        mov rax, 1                    ; syscall number for sys_write.
-        mov rdi, 1                    ; file descriptor: 1 is stdout.
-        
-        ; Load the address of the msg1 string into rsi.
-        lea rsi, [rel msg1]           ; Move relative address of msg1 to RSI 
-
-        ; Specify the number of bytes to write.
-        mov rdx, len                  ; The variable 'len' should contain the length of msg1.
-
-        ; Perform the system call to write to stdout.
-        syscall                       
-
-        ; Restore the base pointer.
-        pop rbp                      
-
-        ; Return from the function.
-        ret                          
+        push rbp             ; preserve rbp
+        mov  rax, 1          ; syscall: write
+        mov  rdi, 1          ; file descriptor: stdout
+        lea  rsi, [rel msg1] ; address of msg1
+        mov  rdx, len        ; message length
+        syscall              ; execute syscall
+        pop  rbp             ; restore rbp
+        ret                  ; return
+          
 ;--------------------------------------------------------------------------------
 
 global asm_func2
@@ -54,27 +39,12 @@ global asm_func2
 ;   rax: Length of the string
 
 asm_func2:
-        ; Preserve the base pointer
-        push rbp                     
-
-        ; Prepare RSI for _strlen call: RSI will point to the string
-        mov rsi, rdi                
-
-        ; Calculate the length of the string
-        call _strlen                 
-
-        ; RAX now contains the length of the string. Save it in RDX for syscall
-        mov rdx, rax                
-
-        ; Prepare for the system call to write to stdout
-        mov rax, 1                   ; syscall: write
-        mov rdi, 1                   ; file descriptor: 1 is stdout
-
-        ; System call
-        syscall                      
-
-        ; Restore base pointer and return from function
-        pop rbp                      
+        
+        push rbp                ; Preserve the base pointer                     
+        mov rsi, rdi            ; Prepare RSI for _strlen call: RSI will point to the string                
+        call _strlen            ; Calculate the length of the string                 
+        mov rdx, rax            ; RAX now contains the length of the string. Save it in RDX for syscall                                             
+        pop rbp                 ; Restore base pointer and return from function                      
         ret                          
 
 ; Function: _strlen
@@ -85,37 +55,22 @@ asm_func2:
 ;   rax: Length of the string
 
 _strlen:
-        push rsi
-        mov rsi, rdi
-        ; Clear RCX, which will store the length of the string
-        xor rcx, rcx                
+        xor  rcx, rcx          ; initialize counter to 0
 
-_strlen_next:
-        ; Check if we've hit the null byte terminator
-        cmp [rsi], byte 0            
-        jz _strlen_null              
-
-        ; If not, increment our counter and move to the next character
-        inc rcx                      
-        inc rsi                      
-        jmp _strlen_next            
+_strlen_next:       
+        cmp  [rdi+rcx], byte 0 ; check for null terminator
+        jz   _strlen_null      ; if found, end the loop
+        inc  rcx               ; increment length counter
+        jmp  _strlen_next      ; loop for next char
 
 _strlen_null:
-        ; When the null byte is found, move the length from RCX to RAX
-        mov rax, rcx  
-        pop rsi              
-        ret                          
+        mov  rax, rcx          ; return string length in rax
+        sub  rax,1             ; we don't want \n
+        ret                    ; return
 
-; Function: _exit
-; Purpose: Exits the program.
-; This function is not called in the above code, but is provided for completeness.
         
 ;----------------------------------------------------------------------------------------
 global                  asm_func3
-;
-; Receives a string null terminated, converts lowercase chars to UPPERCASE and return new string
-;
-
 ; Function: asm_func3
 ; Purpose: Convert all lowercase letters in a source string to uppercase and store the result in a destination buffer.
 ; Parameters:
@@ -125,52 +80,31 @@ global                  asm_func3
 ;   rax: Pointer to the destination buffer containing the converted string.
 
 asm_func3:
-        ; Preserve the base pointer, as it's callee-saved.
-        push  rbp                     
-
-        ; Initialize rcx (our character offset counter) to 0.
-        xor   rcx, rcx                 
+        push rbp                  ; preserve rbp
+        xor  rcx, rcx             ; initialize rcx to 0
 
 _toupper:
-        ; Load the next character from the source string into the al register.
-        mov   al, byte [rdi]           
-
-        ; Check if we've reached the end of the source string.
-        cmp   al, 0h                   
-        je    _toupper_end              ; If yes, jump to the function's end sequence.
-
-        ; Check if the character is a lowercase letter.
-        ; ASCII values: 'a' is 61h and 'z' is 7Ah.
-        cmp   al, 61h                  
-        jl    _toupper_next             ; If character is less than 'a', skip to the next character.
-        cmp   al, 7Ah                  
-        jg    _toupper_next             ; If character is greater than 'z', skip to the next character.
-        
-        ; Convert the lowercase character to uppercase.
-        ; ASCII conversion: Uppercase letters are 32 less than their lowercase counterparts.
-        sub   al, 20h                  
+        mov  al, byte [rdi]       ; load next char from string
+        cmp  al, 0h              
+        je   _toupper_end         ; if end of string, exit
+        cmp  al, 61h             
+        jl   _toupper_next        ; skip if char < 'a'
+        cmp  al, 7Ah             
+        jg   _toupper_next        ; skip if char > 'z'
+        sub  al, 20h              ; convert lowercase to uppercase
 
 _toupper_next:   
-        ; Store the (potentially converted) character into the destination buffer.
-        mov   byte [rsi + rcx], al     
-
-        ; Increment both the source pointer and our character offset counter.
-        inc   rdi                      
-        inc   rcx                      
-
-        ; Jump back to the start of the loop to process the next character.
-        jmp   _toupper                 
+        mov  byte [rsi + rcx], al ; store converted char
+        inc  rdi                  ; move to next source char
+        inc  rcx                  ; increment counter
+        jmp  _toupper             ; loop to process next char
 
 _toupper_end:
-        ; Null-terminate the destination buffer.
-        mov   byte [rsi + rcx], 0h     
-
-        ; Set the return value to the base address of the destination buffer.
-        mov   rax, rsi                 
-
-        ; Restore the base pointer and return from the function.
-        pop   rbp                      
-        ret                           
+        mov  byte [rsi + rcx], 0h ; null-terminate the output
+        mov  rax, rsi             ; set return value to destination buffer address
+        pop  rbp                  ; restore rbp
+        ret                       ; return
+                   
 
 ;--------------------------------------------------------------------------------
 
@@ -179,10 +113,10 @@ global asm_func4
 
 asm_func4:
         push rbp                ; preserve rbp
-        push rbx
-        call _strlen            ; get rdi strlen
+        push rbx                ; preserve rbx
+        call _strlen            ; get string strlen
         mov rdx, rax            ; copy strlen to reverse counter 
-        sub rdx, 2              ; we don't neet to move \n and 0h 
+        sub rdx, 1              ; we don't need to move \n  
         xor rcx, rcx            ; clear counter        
 
 _reverse_str:
@@ -200,7 +134,28 @@ _reverse_end:
         pop rbx                 ; housekeeping
         pop rbp                 ; housekeeping
         ret
+
 ;---------------------------------------------------------------------------------
+; Function: _asm_func99
+; Purpose: test function
+global asm_func99
+asm_func99:
+        push rbp
+        mov rbp, rsp
+
+_99_loop:
+        nop
+        nop
+        nop
+
+        mov rax, rdi
+_end_99:
+        pop rbp
+        ret
+
+;---------------------------------------------------------------------------------
+; Function: _exit
+; Purpose: Exits the program.
 _exit:
         ; System call for exit
         mov rax, 60                 
@@ -210,9 +165,6 @@ _exit:
 
         ; Invoke operating system call to terminate the process
         syscall                      
-
-
-
 ;----------------------------------------------------------------------------------------------------
 
 
